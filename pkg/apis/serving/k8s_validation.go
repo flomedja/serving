@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"knative.dev/pkg/apis"
 	"knative.dev/pkg/profiling"
+
 	"knative.dev/serving/pkg/apis/config"
 	"knative.dev/serving/pkg/networking"
 )
@@ -528,6 +529,10 @@ func validateSidecarContainer(ctx context.Context, container corev1.Container, v
 			errs = errs.Also(apis.CheckDisallowedFields(*container.LivenessProbe,
 				*ProbeMask(&corev1.Probe{})).ViaField("livenessProbe"))
 		}
+		if container.StartupProbe != nil {
+			errs = errs.Also(apis.CheckDisallowedFields(*container.StartupProbe,
+				*ProbeMask(&corev1.Probe{})).ViaField("startupProbe"))
+		}
 		if container.ReadinessProbe != nil {
 			errs = errs.Also(apis.CheckDisallowedFields(*container.ReadinessProbe,
 				*ProbeMask(&corev1.Probe{})).ViaField("readinessProbe"))
@@ -535,6 +540,8 @@ func validateSidecarContainer(ctx context.Context, container corev1.Container, v
 	} else if cfg.Features.MultiContainerProbing == config.Enabled {
 		// Liveness Probes
 		errs = errs.Also(validateProbe(container.LivenessProbe, nil, false).ViaField("livenessProbe"))
+		// StartUp Probes
+		errs = errs.Also(validateProbe(container.StartupProbe, nil, false).ViaField("startupProbe"))
 		// Readiness Probes
 		errs = errs.Also(validateReadinessProbe(container.ReadinessProbe, nil, false).ViaField("readinessProbe"))
 	}
@@ -576,6 +583,8 @@ func validateInitContainer(ctx context.Context, container corev1.Container, volu
 func ValidateUserContainer(ctx context.Context, container corev1.Container, volumes map[string]corev1.Volume, port corev1.ContainerPort) (errs *apis.FieldError) {
 	// Liveness Probes
 	errs = errs.Also(validateProbe(container.LivenessProbe, &port, true).ViaField("livenessProbe"))
+	// StartUp Probes
+	errs = errs.Also(validateProbe(container.StartupProbe, &port, true).ViaField("startupProbe"))
 	// Readiness Probes
 	errs = errs.Also(validateReadinessProbe(container.ReadinessProbe, &port, true).ViaField("readinessProbe"))
 	return errs.Also(validate(ctx, container, volumes))
